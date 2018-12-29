@@ -49,19 +49,17 @@ func NewCustmizedTracer(ins, user, dbType string) *Tracer {
 	}
 }
 
-func NewCustmizedTracerWrapper(t *Tracer, db Querier, enableRawQuery bool) wrapper.Wrapper {
+func NewCustmizedTracerWrapper(t *Tracer, enableRawQuery bool) wrapper.Wrapper {
 	return &DefaultTracer{
-		db:                    db,
 		isRawQueryEnable:      enableRawQuery,
 		isIgnoreSelectColumns: true,
 		tracer:                t,
 	}
 }
 
-func NewDefaultTracerWrapper(db Querier, enableRawQuery bool) wrapper.Wrapper {
+func NewDefaultTracerWrapper() wrapper.Wrapper {
 	return &DefaultTracer{
-		db:                    db,
-		isRawQueryEnable:      enableRawQuery,
+		isRawQueryEnable:      false,
 		isIgnoreSelectColumns: true,
 		tracer:                NewDefaultTracer("", ""),
 	}
@@ -76,7 +74,6 @@ func NewDefaultTracer(ins string, user string) *Tracer {
 }
 
 type DefaultTracer struct {
-	db                    Querier
 	isRawQueryEnable      bool
 	isIgnoreSelectColumns bool
 	tracer                *Tracer
@@ -114,11 +111,4 @@ func (t *DefaultTracer) hackQueryBuilder(query string, args ...interface{}) stri
 		query = r.ReplaceAllString(query, "SELECT ... FROM")
 	}
 	return query
-}
-
-// Querier is the common interface to execute queries on a DB, Tx, or Conn.
-type Querier interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
