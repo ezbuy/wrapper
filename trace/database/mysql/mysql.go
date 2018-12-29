@@ -5,12 +5,12 @@ import (
 	"github.com/ezbuy/wrapper/trace/database"
 )
 
-func NewCustomizedMySQLTracer(ins string, user string) *database.Tracer {
-	return database.NewCustmizedTracer(ins, user, "mysql")
+func NewCustomizedMySQLTracer(options ...func(*database.Tracer)) *database.Tracer {
+	return database.NewCustmizedTracer("mysql", options...)
 }
 
 func NewMySQLTracerWrapper() wrapper.Wrapper {
 	return database.NewCustmizedTracerWrapper(
-		database.NewCustmizedTracer("", "", "mysql"), false,
+		database.NewCustmizedTracer("mysql"),
 	)
 }

@@ -41,42 +41,57 @@ func (t *Tracer) Close() {
 	}
 }
 
-func NewCustmizedTracer(ins, user, dbType string) *Tracer {
-	return &Tracer{
-		instance: ins,
-		user:     user,
-		dbtype:   dbType,
+func NewCustmizedTracer(dbType string, options ...func(t *Tracer)) *Tracer {
+	t := &Tracer{
+		dbtype: dbType,
 	}
+	for _, op := range options {
+		op(t)
+	}
+	return t
 }
 
-func NewCustmizedTracerWrapper(t *Tracer, enableRawQuery bool) wrapper.Wrapper {
-	return &DefaultTracer{
-		isRawQueryEnable:      enableRawQuery,
+func NewCustmizedTracerWrapper(t *Tracer, options ...func(t *DefaultTracer)) wrapper.Wrapper {
+	dt := &DefaultTracer{
 		isIgnoreSelectColumns: true,
 		tracer:                t,
 	}
+	for _, op := range options {
+		op(dt)
+	}
+	return dt
 }
 
 func NewDefaultTracerWrapper() wrapper.Wrapper {
 	return &DefaultTracer{
 		isRawQueryEnable:      false,
 		isIgnoreSelectColumns: true,
-		tracer:                NewDefaultTracer("", ""),
+		tracer:                NewDefaultTracer(),
 	}
 }
 
-func NewDefaultTracer(ins string, user string) *Tracer {
-	return &Tracer{
-		dbtype:   "default db",
-		instance: ins,
-		user:     user,
+func NewDefaultTracer(options ...func(*Tracer)) *Tracer {
+	t := &Tracer{
+		dbtype: "no db",
 	}
+	for _, op := range options {
+		op(t)
+	}
+	return t
 }
 
 type DefaultTracer struct {
 	isRawQueryEnable      bool
 	isIgnoreSelectColumns bool
 	tracer                *Tracer
+}
+
+func (dt *DefaultTracer) EnableRawQuery() {
+	dt.isRawQueryEnable = true
+}
+
+func (dt *DefaultTracer) EnableIngoreSelectColumns() {
+	dt.isIgnoreSelectColumns = true
 }
 
 func (t *DefaultTracer) WrapQueryContext(ctx context.Context, fn wrapper.QueryContextFunc,
