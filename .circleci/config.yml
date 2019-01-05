@@ -27,9 +27,8 @@ jobs:
 
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
-      - run: go test ./database
+      - run: go test ./database -coverprofile=coverage.txt -covermode=atomic
       - run:
-        name: send codecov report
-        command: bash <(curl -s https://codecov.io/bash)
-        when: on_success
-    test:
+          name: Push on codecov result
+          command: |
+            bash <(curl -s https://codecov.io/bash)
