@@ -28,3 +28,8 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
       - run: go test ./database
+      - run:
+        name: send codecov report
+        command: bash <(curl -s https://codecov.io/bash)
+        when: on_success
+    test:
