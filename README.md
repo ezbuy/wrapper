@@ -18,7 +18,7 @@ Wrapper is a developer friendly toolkit, which will provide a set of wrapper to 
 
 ## Database tracer
 
-Now database tracer provides a [jaeger](https://github.com/uber/jaeger-client-go) tracer client to trace SQL query context . Here is some sample usages for different go database package user.
+Now database tracer provides a [jaeger](https://github.com/uber/jaeger-client-go) tracer client to trace SQL query context . Here are some sample usages for different go database package users.
 
 > You can find the full sample usage in test file as well.
 
