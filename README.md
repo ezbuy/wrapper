@@ -7,7 +7,7 @@ Wrapper
 
 # What is Wrapper ?
 
-Wrapper is a developer friendly toolkit, which will provide a set of wrapper to intergrate 3rd Open Source Project with ezbuy codebase easily and efficiently.
+Wrapper is a developer friendly toolkit, which will provide a set of wrapper to intergrate 3rd Open Source Project with ezbuy codebase easily and efficiently.
 
 # Goals
 
