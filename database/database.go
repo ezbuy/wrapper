@@ -78,9 +78,9 @@ func (t *Tracer) GetDBType() string {
 	return t.dbtype
 }
 
-// AddQueryBuilders adds the new builder(fn) to query builders.
+// AddQueryBuilder adds the new builder(fn) to query builders.
 // The builders in query builders will be execed in `Do` function
-func (t *Tracer) AddQueryBuilders(fn func(query string, args ...interface{}) string) {
+func (t *Tracer) AddQueryBuilder(fn func(query string, args ...interface{}) string) {
 	t.queryBuilders = append(t.queryBuilders, fn)
 }
 
@@ -157,10 +157,10 @@ func (t *DefaultTracerWrapper) WrapExecContext(ctx context.Context, fn wrapper.E
 // hackQueryBuilder exec all registered query builder
 func (t *DefaultTracerWrapper) hackQueryBuilder(query string, args ...interface{}) string {
 	if t.tracer.IsRawQueryEnable() {
-		t.tracer.AddQueryBuilders(rawQueryBuilder)
+		t.tracer.AddQueryBuilder(rawQueryBuilder)
 	}
 	if t.tracer.IsIgnoreSelectColumnsEnable() {
-		t.tracer.AddQueryBuilders(ignoreSelectColumnQueryBuilder)
+		t.tracer.AddQueryBuilder(ignoreSelectColumnQueryBuilder)
 	}
 	for _, fn := range t.tracer.queryBuilders {
 		query = fn(query, args...)
