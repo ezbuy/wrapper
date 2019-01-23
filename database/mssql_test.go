@@ -29,7 +29,7 @@ func TestNewMsSQLTracer(t *testing.T) {
 			args{
 				options: []func(*Tracer){
 					func(t *Tracer) {
-						t.EnableIgnoreSelectColumns()
+						t.UseIgnoreSelectColumnsOption()
 					},
 				},
 			},
@@ -42,7 +42,7 @@ func TestNewMsSQLTracer(t *testing.T) {
 			args{
 				options: []func(*Tracer){
 					func(t *Tracer) {
-						t.EnableRawQuery()
+						t.UseRawQueryOption()
 					},
 				},
 			},
@@ -55,8 +55,8 @@ func TestNewMsSQLTracer(t *testing.T) {
 			args{
 				options: []func(*Tracer){
 					func(t *Tracer) {
-						t.EnableRawQuery()
-						t.EnableIgnoreSelectColumns()
+						t.UseIgnoreSelectColumnsOption()
+						t.UseRawQueryOption()
 					},
 				},
 			},
@@ -70,14 +70,6 @@ func TestNewMsSQLTracer(t *testing.T) {
 			got := newMsSQLTracer(tt.args.options...)
 			if got.GetDBType() != tt.dbType {
 				t.Errorf("NewMsSQLTracer() DBType = %v, want %v", got.GetDBType(), tt.dbType)
-			}
-			if got.IsIgnoreSelectColumnsEnable() != tt.isIgnoreSelectedColumnsEnable {
-				t.Errorf("NewMsSQLTracer() option ignoreSelectColumn = %v, want %v",
-					got.IsIgnoreSelectColumnsEnable(), tt.isIgnoreSelectedColumnsEnable)
-			}
-			if got.IsRawQueryEnable() != tt.isRawQueryEnable {
-				t.Errorf("NewMsSQLTracer() option rawQuery = %v, want %v",
-					got.IsRawQueryEnable(), tt.isRawQueryEnable)
 			}
 		})
 	}

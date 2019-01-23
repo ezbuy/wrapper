@@ -1,19 +1,15 @@
 package database
 
-import (
-	"github.com/ezbuy/wrapper"
-)
-
 func newMsSQLTracer(options ...func(*Tracer)) *Tracer {
 	return NewCustmizedTracer("mssql", options...)
 }
 
-func NewMsSQLTracerWrapper(options ...func(*Tracer)) wrapper.Wrapper {
+func NewMsSQLTracerWrapper(options ...func(*Tracer)) *TracerWrapper {
 	return NewCustmizedTracerWrapper(
 		newMsSQLTracer(options...),
 	)
 }
 
-func NewDefaultMsSQLTracerWrapper() wrapper.Wrapper {
-	return NewDefaultTracerWrapper("mssql")
+func NewDefaultMsSQLTracerWrapper() *TracerWrapper {
+	return NewTracerWrapper("mssql")
 }

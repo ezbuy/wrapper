@@ -1,4 +1,4 @@
-package wrapper
+package database
 
 import (
 	"context"
@@ -11,6 +11,6 @@ type ExecContextFunc func(ctx context.Context, query string, args ...interface{}
 
 // Wrapper defines database common operations
 type Wrapper interface {
-	WrapQueryContext(ctx context.Context, fn QueryContextFunc, sql string, args ...interface{}) QueryContextFunc
-	WrapExecContext(ctx context.Context, fn ExecContextFunc, sql string, args ...interface{}) ExecContextFunc
+	WrapQueryContext(fn QueryContextFunc, sql string, args ...interface{}) QueryContextFunc
+	WrapExecContext(fn ExecContextFunc, sql string, args ...interface{}) ExecContextFunc
 }

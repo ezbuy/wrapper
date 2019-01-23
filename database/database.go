@@ -7,21 +7,18 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ezbuy/wrapper"
 	"github.com/opentracing/opentracing-go"
 	tags "github.com/opentracing/opentracing-go/ext"
 )
 
 // Tracer defines the database tracer
 type Tracer struct {
-	instance              string
-	statement             string
-	dbtype                string
-	user                  string
-	span                  opentracing.Span
-	isRawQueryEnable      bool
-	isIgnoreSelectColumns bool
-	queryBuilders         []func(query string, args ...interface{}) string
+	instance      string
+	statement     string
+	dbtype        string
+	user          string
+	span          opentracing.Span
+	queryBuilders []func(query string, args ...interface{}) string
 }
 
 // do gets the opentracing's global tracer ,and add span tags
@@ -49,28 +46,18 @@ func (t *Tracer) close() {
 	}
 }
 
-// EnableRawQuery enable the raw query option
+// UseRawQueryOption enable the raw query option
 // raw query option will convert the ? placeHolders to real data.
 // Once enabled, "SELECT a FROM b WHERE c = ?" will be "SELECT a FROM b WHERE c = d"
-func (t *Tracer) EnableRawQuery() {
-	t.isRawQueryEnable = true
+func (t *Tracer) UseRawQueryOption() {
+	t.AddQueryBuilder(rawQueryBuilder)
 }
 
-// EnableIgnoreSelectColumns enable the ignore select columns option
+// UseIgnoreSelectColumnsOption enable the ignore select columns option
 // ignore select column option will ignore the select columns
 // Once enabled, "SELECT a,b FROM c WHERE d = ?" will be "SELECT ... FROM c WHERE d = ?"
-func (t *Tracer) EnableIgnoreSelectColumns() {
-	t.isIgnoreSelectColumns = true
-}
-
-// IsRawQueryEnable checks if raw query option is enable
-func (t *Tracer) IsRawQueryEnable() bool {
-	return t.isRawQueryEnable
-}
-
-// IsIgnoreSelectColumnsEnable checks if ignore select columns option is enable
-func (t *Tracer) IsIgnoreSelectColumnsEnable() bool {
-	return t.isIgnoreSelectColumns
+func (t *Tracer) UseIgnoreSelectColumnsOption() {
+	t.AddQueryBuilder(ignoreSelectColumnQueryBuilder)
 }
 
 // GetDBType returns the set db type
@@ -95,44 +82,42 @@ func NewCustmizedTracer(dbType string, options ...func(t *Tracer)) *Tracer {
 	return t
 }
 
-// newDefaultTracer new a default tracer with
+// newTracer new a default tracer with
 // * ignore select columns option
-func newDefaultTracer(dbType string) *Tracer {
+func newTracer(dbType string) *Tracer {
 	t := &Tracer{
-		dbtype:                dbType,
-		isRawQueryEnable:      false,
-		isIgnoreSelectColumns: true,
+		dbtype: dbType,
 	}
 	return t
 }
 
 // newTracerWrapper new a default tracer wrapper with a tracer
-func newTracerWrapper(t *Tracer) *DefaultTracerWrapper {
-	return &DefaultTracerWrapper{
+func newTracerWrapper(t *Tracer) *TracerWrapper {
+	t.UseIgnoreSelectColumnsOption()
+	return &TracerWrapper{
 		tracer: t,
 	}
 }
 
 // NewCustmizedTracerWrapper new a customized tracer wrapper with tracer and tracer options
-func NewCustmizedTracerWrapper(t *Tracer) *DefaultTracerWrapper {
+func NewCustmizedTracerWrapper(t *Tracer) *TracerWrapper {
 	return newTracerWrapper(t)
 }
 
-// NewDefaultTracerWrapper new a default tracer wrapper with
+// NewTracerWrapper new a default tracer wrapper with
 // * ignore select columns option
-func NewDefaultTracerWrapper(dbType string) *DefaultTracerWrapper {
-	return newTracerWrapper(newDefaultTracer(dbType))
+func NewTracerWrapper(dbType string) *TracerWrapper {
+	return newTracerWrapper(newTracer(dbType))
 }
 
-// DefaultTracerWrapper defines a tracer wrapper
+// TracerWrapper defines a tracer wrapper
 // which impls WrapQueryContext and WrapExecContext
-type DefaultTracerWrapper struct {
+type TracerWrapper struct {
 	tracer *Tracer
 }
 
 // WrapQueryContext impls wrapper's WrapQueryContext
-func (t *DefaultTracerWrapper) WrapQueryContext(ctx context.Context, fn wrapper.QueryContextFunc,
-	query string, args ...interface{}) wrapper.QueryContextFunc {
+func (t *TracerWrapper) WrapQueryContext(fn QueryContextFunc, query string, args ...interface{}) QueryContextFunc {
 	tracerFn := func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 		t.tracer.statement = t.hackQueryBuilder(query, args...)
 		t.tracer.do(ctx)
@@ -143,8 +128,7 @@ func (t *DefaultTracerWrapper) WrapQueryContext(ctx context.Context, fn wrapper.
 }
 
 // WrapExecContext impls wrapper's WrapExecContext
-func (t *DefaultTracerWrapper) WrapExecContext(ctx context.Context, fn wrapper.ExecContextFunc,
-	query string, args ...interface{}) wrapper.ExecContextFunc {
+func (t *TracerWrapper) WrapExecContext(fn ExecContextFunc, query string, args ...interface{}) ExecContextFunc {
 	tracerFn := func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 		t.tracer.statement = t.hackQueryBuilder(query, args...)
 		t.tracer.do(ctx)
@@ -155,13 +139,7 @@ func (t *DefaultTracerWrapper) WrapExecContext(ctx context.Context, fn wrapper.E
 }
 
 // hackQueryBuilder exec all registered query builder
-func (t *DefaultTracerWrapper) hackQueryBuilder(query string, args ...interface{}) string {
-	if t.tracer.IsRawQueryEnable() {
-		t.tracer.AddQueryBuilder(rawQueryBuilder)
-	}
-	if t.tracer.IsIgnoreSelectColumnsEnable() {
-		t.tracer.AddQueryBuilder(ignoreSelectColumnQueryBuilder)
-	}
+func (t *TracerWrapper) hackQueryBuilder(query string, args ...interface{}) string {
 	for _, fn := range t.tracer.queryBuilders {
 		query = fn(query, args...)
 	}

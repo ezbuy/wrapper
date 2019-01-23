@@ -7,7 +7,7 @@ Wrapper
 
 # What is Wrapper ?
 
-Wrapper is a developer friendly toolkit, which will provide a set of wrapper to intergrate 3rd Open Source Project with ezbuy codebase easily and efficiently.
+Wrapper is a developer friendly toolkit, which will provide a set of wrapper to integrate 3rd Open Source Project with ezbuy codebase easily and efficiently.
 
 # Goals
 
@@ -33,7 +33,7 @@ originExecContextFunc:= wrapper.ExecContextFunc(func(ctx context.Context, query 
 					}
 					return db.ExecContext(ctx, query, args...)
 				})
-res,err:=wp.WrapExecContext(ctx,originExecContextFunc,sql,args...)
+res,err:=wp.WrapExecContext(originExecContextFunc,sql,args...)
 if err != nil{
 // handle error
 }
@@ -54,17 +54,17 @@ So, all sql packages which provide the Query/ExecContextFunc can add the jaeger 
 
 ### Tracer Options
 
-* Hide select columns: `t.EnableIgnoreSelectColumns()`
-* Show real args instead of `?`: `t.EnableRawQuery()`
+* Hide select columns: `t.UseIgnoreSelectColumnsOption()`
+* Show real args instead of `?`: `t.UseRawQueryOption()`
 * More custmized options are welcome.
 ```go
 // how to use options
 options:= []func(t *database.Tracer){
     func(t *database.Tracer){
-        t.EnableIgnoreSelectColumns()
+        t.UseIgnoreSelectColumnsOption()
     },
     func(t *database.Tracer){
-        t.EnableRawQuery()
+        t.UseRawQueryOption()
     },
     func (t *database.Tracer){
         t.AddQueryBuilder(func(query string,args ...interface{})string{

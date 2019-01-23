@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/ezbuy/wrapper"
 	"github.com/opentracing/opentracing-go"
 	tags "github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/mocktracer"
@@ -25,16 +24,16 @@ func TestDefaultTracerWrapper_hackQueryBuilder(t *testing.T) {
 	}
 	tracerAllOptions := NewCustmizedTracer("mysql",
 		func(t *Tracer) {
-			t.EnableIgnoreSelectColumns()
-			t.EnableRawQuery()
+			t.UseIgnoreSelectColumnsOption()
+			t.UseRawQueryOption()
 		})
 	tracerWithRawQueryOption := NewCustmizedTracer("mysql",
 		func(t *Tracer) {
-			t.EnableRawQuery()
+			t.UseRawQueryOption()
 		})
 	tracerWithIgnoreSelectOption := NewCustmizedTracer("mysql",
 		func(t *Tracer) {
-			t.EnableIgnoreSelectColumns()
+			t.UseIgnoreSelectColumnsOption()
 		})
 	tests := []struct {
 		name   string
@@ -78,7 +77,7 @@ func TestDefaultTracerWrapper_hackQueryBuilder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dt := &DefaultTracerWrapper{
+			dt := &TracerWrapper{
 				tracer: tt.fields.tracer,
 			}
 			if got := dt.hackQueryBuilder(tt.args.query, tt.args.args...); got != tt.want {
@@ -96,8 +95,8 @@ func TestTracer_Do(t *testing.T) {
 
 	tracerAllOptions := NewCustmizedTracer("mysql",
 		func(t *Tracer) {
-			t.EnableIgnoreSelectColumns()
-			t.EnableRawQuery()
+			t.UseIgnoreSelectColumnsOption()
+			t.UseRawQueryOption()
 			t.statement = "SELECT ... FROM b WHERE c = d"
 		})
 
@@ -149,7 +148,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 	}
 	type args struct {
 		ctx   context.Context
-		fn    wrapper.QueryContextFunc
+		fn    QueryContextFunc
 		query string
 		args  []interface{}
 	}
@@ -157,14 +156,14 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          args
-		wp            wrapper.Wrapper
+		wp            *TracerWrapper
 		wantStatement string
 	}{
 		{
 			name: "TestDefaultTracerWrapper_WrapQueryContext_MySQL",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+				fn: QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -181,7 +180,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapQueryContext_MySQL_Custmized",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+				fn: QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -192,8 +191,8 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 				args:  []interface{}{"d"},
 			},
 			wp: NewMySQLTracerWrapper(func(t *Tracer) {
-				t.EnableIgnoreSelectColumns()
-				t.EnableRawQuery()
+				t.UseIgnoreSelectColumnsOption()
+				t.UseRawQueryOption()
 			}),
 			wantStatement: "SELECT ... FROM b WHERE c = d",
 		},
@@ -201,7 +200,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapQueryContext_MsSQL",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+				fn: QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -218,7 +217,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapQueryContext_MsSQL_Custmized",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+				fn: QueryContextFunc(func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -229,8 +228,8 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 				args:  []interface{}{"d"},
 			},
 			wp: NewMsSQLTracerWrapper(func(t *Tracer) {
-				t.EnableIgnoreSelectColumns()
-				t.EnableRawQuery()
+				t.UseIgnoreSelectColumnsOption()
+				t.UseRawQueryOption()
 			}),
 			wantStatement: "SELECT ... FROM b WHERE c = d",
 		},
@@ -238,8 +237,8 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wp.WrapQueryContext(tt.args.ctx, tt.args.fn, tt.args.query, tt.args.args...)(tt.args.ctx, tt.args.query, tt.args.args...)
-			dt := tt.wp.(*DefaultTracerWrapper).tracer
+			tt.wp.WrapQueryContext(tt.args.fn, tt.args.query, tt.args.args...)(tt.args.ctx, tt.args.query, tt.args.args...)
+			dt := tt.wp.tracer
 			if ins := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBInstance)); ins != dt.instance {
 				t.Errorf("tags.DBInstance = %v,want %v", ins, dt.instance)
 			}
@@ -263,7 +262,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 	}
 	type args struct {
 		ctx   context.Context
-		fn    wrapper.ExecContextFunc
+		fn    ExecContextFunc
 		query string
 		args  []interface{}
 	}
@@ -271,14 +270,14 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          args
-		wp            wrapper.Wrapper
+		wp            *TracerWrapper
 		wantStatement string
 	}{
 		{
 			name: "TestDefaultTracerWrapper_WrapExecContext",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				fn: ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -295,7 +294,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapExecContext_MySQL_Custmized",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				fn: ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -306,8 +305,8 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 				args:  []interface{}{"e"},
 			},
 			wp: NewMySQLTracerWrapper(func(t *Tracer) {
-				t.EnableIgnoreSelectColumns()
-				t.EnableRawQuery()
+				t.UseIgnoreSelectColumnsOption()
+				t.UseRawQueryOption()
 			}),
 			wantStatement: "UPDATE a SET c = d WHERE c = e",
 		},
@@ -315,7 +314,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapExecContext_MsSQL",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				fn: ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -332,7 +331,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 			name: "TestDefaultTracerWrapper_WrapExecContext_MsSQL_Custmized",
 			args: args{
 				ctx: context.TODO(),
-				fn: wrapper.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				fn: ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 					db, _, err := sqlmock.New()
 					if err != nil {
 						t.Errorf("mock sql conn failed:%v", err.Error())
@@ -343,16 +342,16 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 				args:  []interface{}{"e"},
 			},
 			wp: NewMsSQLTracerWrapper(func(t *Tracer) {
-				t.EnableIgnoreSelectColumns()
-				t.EnableRawQuery()
+				t.UseIgnoreSelectColumnsOption()
+				t.UseRawQueryOption()
 			}),
 			wantStatement: "SELECT ... FROM b WHERE c = e",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.wp.WrapExecContext(tt.args.ctx, tt.args.fn, tt.args.query, tt.args.args...)(tt.args.ctx, tt.args.query, tt.args.args...)
-			dt := tt.wp.(*DefaultTracerWrapper).tracer
+			tt.wp.WrapExecContext(tt.args.fn, tt.args.query, tt.args.args...)(tt.args.ctx, tt.args.query, tt.args.args...)
+			dt := tt.wp.tracer
 			if ins := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBInstance)); ins != dt.instance {
 				t.Errorf("tags.DBInstance = %v,want %v", ins, dt.instance)
 			}
