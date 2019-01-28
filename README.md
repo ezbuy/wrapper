@@ -25,15 +25,14 @@ Now database tracer provides a [jaeger](https://github.com/uber/jaeger-client-go
 ### For [sqlx](https://github.com/jmoiron/sqlx) users
 
 ```go
-wp:= database.NewDefaultMySQLTracerWrapper()
-// or wp:= database.NewMySQLTracerWrapper(options...)
-originExecContextFunc:= wrapper.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+wp := database.NewMySQLTracerWrapper()
+originExecContextFunc := database.ExecContextFunc(func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 					db, err:= sqlx.Connect("mysql","test:test@(localhost:3306)/test")
 					if err != nil { // handle error
 					}
 					return db.ExecContext(ctx, query, args...)
 				})
-res,err:=wp.WrapExecContext(originExecContextFunc,sql,args...)
+res,err := wp.WrapExecContext(originExecContextFunc,sql,args...)
 if err != nil{
 // handle error
 }
@@ -52,28 +51,26 @@ To speak more generally, database tracer Wrapper accept a Query/ExecContextFunc 
 
 So, all sql packages which provide the Query/ExecContextFunc can add the jaeger tracer within one simple function.
 
-### Tracer Options
+### tracer Options
 
-* Hide select columns: `t.UseIgnoreSelectColumnsOption()`
-* Show real args instead of `?`: `t.UseRawQueryOption()`
+* Hide select columns: `database.IgnoreSelectColumnsOption`
+* Show real args instead of `?`: `database.RawQueryOption`
 * More custmized options are welcome.
 ```go
 // how to use options
-options:= []func(t *database.Tracer){
-    func(t *database.Tracer){
-        t.UseIgnoreSelectColumnsOption()
-    },
-    func(t *database.Tracer){
-        t.UseRawQueryOption()
-    },
-    func (t *database.Tracer){
-        t.AddQueryBuilder(func(query string,args ...interface{})string{
-            // handle with query and args
-            return query
-            })
+type myQueryBuilder struct{}
+
+func (qb myQueryBuilder) QueryBuilder()func(query string, args ...interface{}) string{
+    return func(query string,args ...interface{}) string{
+        var res string
+        // handle query and args
+        return res
     }
 }
-wp:= database.NewMySQLTracerWrapper(options...)
+mqb:= myQueryBuilder{}
+
+wp:= database.NewMySQLTracerWrapper(database.RawQueryOption,database.IgnoreSelectColumnsOption,mqb)
+
 ```
 
 # Contribution
