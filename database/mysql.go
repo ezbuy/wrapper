@@ -1,15 +1,15 @@
 package database
 
-func newMySQLTracer(options ...func(*Tracer)) *Tracer {
-	return NewCustmizedTracer("mysql", options...)
+func newMySQLTracer(options ...WrapperOption) *Tracer {
+	return NewTracer("mysql", options...)
 }
 
-func NewMySQLTracerWrapper(options ...func(*Tracer)) *TracerWrapper {
-	return NewCustmizedTracerWrapper(
+func newMySQLTracerWrapperWithOpts(options ...WrapperOption) *TracerWrapper {
+	return NewTracerWrapperWithTracer(
 		newMySQLTracer(options...),
 	)
 }
 
-func NewDefaultMySQLTracerWrapper() *TracerWrapper {
+func NewMySQLTracerWrapper() *TracerWrapper {
 	return NewTracerWrapper("mysql")
 }

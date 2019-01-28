@@ -1,15 +1,15 @@
 package database
 
-func newMsSQLTracer(options ...func(*Tracer)) *Tracer {
-	return NewCustmizedTracer("mssql", options...)
+func newMsSQLTracer(options ...WrapperOption) *Tracer {
+	return NewTracer("mssql", options...)
 }
 
-func NewMsSQLTracerWrapper(options ...func(*Tracer)) *TracerWrapper {
-	return NewCustmizedTracerWrapper(
+func newMsSQLTracerWrapperWithOpts(options ...WrapperOption) *TracerWrapper {
+	return NewTracerWrapperWithTracer(
 		newMsSQLTracer(options...),
 	)
 }
 
-func NewDefaultMsSQLTracerWrapper() *TracerWrapper {
+func NewMsSQLTracerWrapper() *TracerWrapper {
 	return NewTracerWrapper("mssql")
 }

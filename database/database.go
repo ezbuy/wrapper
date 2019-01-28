@@ -11,6 +11,17 @@ import (
 	tags "github.com/opentracing/opentracing-go/ext"
 )
 
+var (
+	// RawQueryOption enable the raw query option
+	// raw query option will convert the ? placeHolders to real data.
+	// Once enabled, "SELECT a FROM b WHERE c = ?" will be "SELECT a FROM b WHERE c = d"
+	RawQueryOption = rawQueryOption{}
+	// IgnoreSelectColumnsOption enable the ignore select columns option
+	// ignore select column option will ignore the select columns
+	// Once enabled, "SELECT a,b FROM c WHERE d = ?" will be "SELECT ... FROM c WHERE d = ?"
+	IgnoreSelectColumnsOption = ignoreSelectColumnsOption{}
+)
+
 // Tracer defines the database tracer
 type Tracer struct {
 	instance      string
@@ -19,6 +30,11 @@ type Tracer struct {
 	user          string
 	span          opentracing.Span
 	queryBuilders []func(query string, args ...interface{}) string
+}
+
+// WrapperOption defines the wrapper's option
+type WrapperOption interface {
+	QueryBuilder() func(query string, args ...interface{}) string
 }
 
 // do gets the opentracing's global tracer ,and add span tags
@@ -46,18 +62,16 @@ func (t *Tracer) close() {
 	}
 }
 
-// UseRawQueryOption enable the raw query option
-// raw query option will convert the ? placeHolders to real data.
-// Once enabled, "SELECT a FROM b WHERE c = ?" will be "SELECT a FROM b WHERE c = d"
-func (t *Tracer) UseRawQueryOption() {
-	t.AddQueryBuilder(rawQueryBuilder)
+type rawQueryOption struct{}
+
+func (opt rawQueryOption) QueryBuilder() func(query string, args ...interface{}) string {
+	return rawQueryBuilder
 }
 
-// UseIgnoreSelectColumnsOption enable the ignore select columns option
-// ignore select column option will ignore the select columns
-// Once enabled, "SELECT a,b FROM c WHERE d = ?" will be "SELECT ... FROM c WHERE d = ?"
-func (t *Tracer) UseIgnoreSelectColumnsOption() {
-	t.AddQueryBuilder(ignoreSelectColumnQueryBuilder)
+type ignoreSelectColumnsOption struct{}
+
+func (opt ignoreSelectColumnsOption) QueryBuilder() func(query string, args ...interface{}) string {
+	return ignoreSelectColumnQueryBuilder
 }
 
 // GetDBType returns the set db type
@@ -71,43 +85,39 @@ func (t *Tracer) AddQueryBuilder(fn func(query string, args ...interface{}) stri
 	t.queryBuilders = append(t.queryBuilders, fn)
 }
 
-// NewCustmizedTracer new a customized tracer with options
-func NewCustmizedTracer(dbType string, options ...func(t *Tracer)) *Tracer {
+// NewTracer new a customized tracer with options
+func NewTracer(dbType string, options ...WrapperOption) *Tracer {
 	t := &Tracer{
 		dbtype: dbType,
 	}
 	for _, op := range options {
-		op(t)
+		t.AddQueryBuilder(op.QueryBuilder())
 	}
 	return t
 }
 
-// newTracer new a default tracer with
+// newTracerWithIgnoreColumnsOption new a default tracer with
 // * ignore select columns option
-func newTracer(dbType string) *Tracer {
-	t := &Tracer{
-		dbtype: dbType,
-	}
-	return t
+func newTracerWithIgnoreColumnsOption(dbType string) *Tracer {
+	return NewTracer(dbType, IgnoreSelectColumnsOption)
 }
 
 // newTracerWrapper new a default tracer wrapper with a tracer
 func newTracerWrapper(t *Tracer) *TracerWrapper {
-	t.UseIgnoreSelectColumnsOption()
 	return &TracerWrapper{
 		tracer: t,
 	}
 }
 
-// NewCustmizedTracerWrapper new a customized tracer wrapper with tracer and tracer options
-func NewCustmizedTracerWrapper(t *Tracer) *TracerWrapper {
+// NewTracerWrapperWithTracer new a customized tracer wrapper with tracer and tracer options
+func NewTracerWrapperWithTracer(t *Tracer) *TracerWrapper {
 	return newTracerWrapper(t)
 }
 
 // NewTracerWrapper new a default tracer wrapper with
 // * ignore select columns option
 func NewTracerWrapper(dbType string) *TracerWrapper {
-	return newTracerWrapper(newTracer(dbType))
+	return newTracerWrapper(newTracerWithIgnoreColumnsOption(dbType))
 }
 
 // TracerWrapper defines a tracer wrapper
