@@ -16,15 +16,15 @@ func init() {
 }
 func TestDefaultTracerWrapper_hackQueryBuilder(t *testing.T) {
 	type fields struct {
-		tracer *Tracer
+		tracer *tracer
 	}
 	type args struct {
 		query string
 		args  []interface{}
 	}
-	tracerAllOptions := NewTracer("mysql", RawQueryOption, IgnoreSelectColumnsOption)
-	tracerWithRawQueryOption := NewTracer("mysql", RawQueryOption)
-	tracerWithIgnoreSelectOption := NewTracer("mysql", IgnoreSelectColumnsOption)
+	tracerAllOptions := newTracer("mysql", RawQueryOption, IgnoreSelectColumnsOption)
+	tracerWithRawQueryOption := newTracer("mysql", RawQueryOption)
+	tracerWithIgnoreSelectOption := newTracer("mysql", IgnoreSelectColumnsOption)
 	tests := []struct {
 		name   string
 		fields fields
@@ -83,12 +83,12 @@ func TestTracer_Do(t *testing.T) {
 		ctx context.Context
 	}
 
-	tracerAllOptions := NewTracer("mysql", IgnoreSelectColumnsOption, RawQueryOption)
+	tracerAllOptions := newTracer("mysql", IgnoreSelectColumnsOption, RawQueryOption)
 	tracerAllOptions.statement = "SELECT ... FROM b WHERE c = d"
 
 	tests := []struct {
 		name   string
-		fields *Tracer
+		fields *tracer
 		args   args
 	}{
 		{
@@ -130,7 +130,7 @@ func TestTracer_Do(t *testing.T) {
 
 func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 	type fields struct {
-		tracer *Tracer
+		tracer *tracer
 	}
 	type args struct {
 		ctx   context.Context
@@ -176,7 +176,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 				query: "SELECT a FROM b WHERE c = ?",
 				args:  []interface{}{"d"},
 			},
-			wp:            newMySQLTracerWrapperWithOpts(RawQueryOption, IgnoreSelectColumnsOption),
+			wp:            NewMySQLTracerWrapperWithOpts(RawQueryOption, IgnoreSelectColumnsOption),
 			wantStatement: "SELECT ... FROM b WHERE c = d",
 		},
 		{
@@ -210,7 +210,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 				query: "SELECT a FROM b WHERE c = ?",
 				args:  []interface{}{"d"},
 			},
-			wp:            newMsSQLTracerWrapperWithOpts(RawQueryOption, IgnoreSelectColumnsOption),
+			wp:            NewMsSQLTracerWrapperWithOpts(RawQueryOption, IgnoreSelectColumnsOption),
 			wantStatement: "SELECT ... FROM b WHERE c = d",
 		},
 	}
@@ -238,7 +238,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 
 func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 	type fields struct {
-		tracer *Tracer
+		tracer *tracer
 	}
 	type args struct {
 		ctx   context.Context
@@ -284,7 +284,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 				query: "UPDATE a SET c = d WHERE c = ?",
 				args:  []interface{}{"e"},
 			},
-			wp:            newMySQLTracerWrapperWithOpts(IgnoreSelectColumnsOption, RawQueryOption),
+			wp:            NewMySQLTracerWrapperWithOpts(IgnoreSelectColumnsOption, RawQueryOption),
 			wantStatement: "UPDATE a SET c = d WHERE c = e",
 		},
 		{
@@ -318,7 +318,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 				query: "UPDATE a SET c = d WHERE c = ?",
 				args:  []interface{}{"e"},
 			},
-			wp:            newMsSQLTracerWrapperWithOpts(IgnoreSelectColumnsOption, RawQueryOption),
+			wp:            NewMsSQLTracerWrapperWithOpts(IgnoreSelectColumnsOption, RawQueryOption),
 			wantStatement: "UPDATE a SET c = d WHERE c = e",
 		},
 	}

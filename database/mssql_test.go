@@ -55,8 +55,8 @@ func TestNewMsSQLTracer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := newMsSQLTracer(tt.args.options...)
-			if got.GetDBType() != tt.dbType {
-				t.Errorf("NewMsSQLTracer() DBType = %v, want %v", got.GetDBType(), tt.dbType)
+			if got.dbtype != tt.dbType {
+				t.Errorf("NewMsSQLTracer() DBType = %v, want %v", got.dbtype, tt.dbType)
 			}
 		})
 	}

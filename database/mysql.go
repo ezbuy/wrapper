@@ -1,15 +1,17 @@
 package database
 
-func newMySQLTracer(options ...TracerOption) *Tracer {
-	return NewTracer("mysql", options...)
+func newMySQLTracer(options ...TracerOption) *tracer {
+	return newTracer("mysql", options...)
 }
 
-func newMySQLTracerWrapperWithOpts(options ...TracerOption) *TracerWrapper {
-	return NewTracerWrapperWithTracer(
+// NewMySQLTracerWrapperWithOpts init a pure TracerWrapper with set options
+func NewMySQLTracerWrapperWithOpts(options ...TracerOption) *TracerWrapper {
+	return newTracerWrapperWithTracer(
 		newMySQLTracer(options...),
 	)
 }
 
+// NewMySQLTracerWrapper init a default TracerWrapper with ignoreSelectColumnsOption
 func NewMySQLTracerWrapper() *TracerWrapper {
 	return NewTracerWrapper("mysql")
 }
