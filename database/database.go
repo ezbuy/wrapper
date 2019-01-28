@@ -32,8 +32,8 @@ type Tracer struct {
 	queryBuilders []func(query string, args ...interface{}) string
 }
 
-// WrapperOption defines the wrapper's option
-type WrapperOption interface {
+// TracerOption defines the wrapper's option
+type TracerOption interface {
 	QueryBuilder() func(query string, args ...interface{}) string
 }
 
@@ -86,7 +86,7 @@ func (t *Tracer) AddQueryBuilder(fn func(query string, args ...interface{}) stri
 }
 
 // NewTracer new a customized tracer with options
-func NewTracer(dbType string, options ...WrapperOption) *Tracer {
+func NewTracer(dbType string, options ...TracerOption) *Tracer {
 	t := &Tracer{
 		dbtype: dbType,
 	}

@@ -6,7 +6,7 @@ import (
 
 func TestNewMySQLTracer(t *testing.T) {
 	type args struct {
-		options []WrapperOption
+		options []TracerOption
 	}
 	tests := []struct {
 		name                          string
@@ -27,7 +27,7 @@ func TestNewMySQLTracer(t *testing.T) {
 		{
 			"TestNewMySQLTracerWithEnableIgnoreSelectColumns",
 			args{
-				options: []WrapperOption{IgnoreSelectColumnsOption},
+				options: []TracerOption{IgnoreSelectColumnsOption},
 			},
 			"mysql",
 			false,
@@ -36,7 +36,7 @@ func TestNewMySQLTracer(t *testing.T) {
 		{
 			"TestNewMySQLTracerWithEnableRawQuery",
 			args{
-				options: []WrapperOption{RawQueryOption},
+				options: []TracerOption{RawQueryOption},
 			},
 			"mysql",
 			true,
@@ -45,7 +45,7 @@ func TestNewMySQLTracer(t *testing.T) {
 		{
 			"TestNewMySQLTracerWithAllOptionsEnable",
 			args{
-				options: []WrapperOption{IgnoreSelectColumnsOption, RawQueryOption},
+				options: []TracerOption{IgnoreSelectColumnsOption, RawQueryOption},
 			},
 			"mysql",
 			true,

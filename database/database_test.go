@@ -176,7 +176,7 @@ func TestDefaultTracerWrapper_WrapQueryContext(t *testing.T) {
 				query: "SELECT a FROM b WHERE c = ?",
 				args:  []interface{}{"d"},
 			},
-			wp:            NewMySQLTracerWrapper(),
+			wp:            newMySQLTracerWrapperWithOpts(RawQueryOption, IgnoreSelectColumnsOption),
 			wantStatement: "SELECT ... FROM b WHERE c = d",
 		},
 		{
@@ -319,7 +319,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 				args:  []interface{}{"e"},
 			},
 			wp:            newMsSQLTracerWrapperWithOpts(IgnoreSelectColumnsOption, RawQueryOption),
-			wantStatement: "SELECT ... FROM b WHERE c = e",
+			wantStatement: "UPDATE a SET c = d WHERE c = e",
 		},
 	}
 	for _, tt := range tests {
@@ -329,7 +329,7 @@ func TestDefaultTracerWrapper_WrapExecContext(t *testing.T) {
 			if ins := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBInstance)); ins != dt.instance {
 				t.Errorf("tags.DBInstance = %v,want %v", ins, dt.instance)
 			}
-			if st := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBStatement)); st != dt.statement {
+			if st := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBStatement)); st != tt.wantStatement {
 				t.Errorf("tags.DBStatement= %v,want %v", st, dt.statement)
 			}
 			if tp := dt.span.(*mocktracer.MockSpan).Tag(string(tags.DBType)); tp != dt.dbtype {

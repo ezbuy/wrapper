@@ -6,7 +6,7 @@ import (
 
 func TestNewMsSQLTracer(t *testing.T) {
 	type args struct {
-		options []WrapperOption
+		options []TracerOption
 	}
 	tests := []struct {
 		name                          string
@@ -27,7 +27,7 @@ func TestNewMsSQLTracer(t *testing.T) {
 		{
 			"TestNewMsSQLTracerWithEnableIgnoreSelectColumns",
 			args{
-				options: []WrapperOption{IgnoreSelectColumnsOption},
+				options: []TracerOption{IgnoreSelectColumnsOption},
 			},
 			"mssql",
 			false,
@@ -36,7 +36,7 @@ func TestNewMsSQLTracer(t *testing.T) {
 		{
 			"TestNewMsSQLTracerWithEnableRawQuery",
 			args{
-				options: []WrapperOption{RawQueryOption},
+				options: []TracerOption{RawQueryOption},
 			},
 			"mssql",
 			true,
@@ -45,7 +45,7 @@ func TestNewMsSQLTracer(t *testing.T) {
 		{
 			"TestNewMsSQLTracerWithAllOptionsEnable",
 			args{
-				options: []WrapperOption{IgnoreSelectColumnsOption, RawQueryOption},
+				options: []TracerOption{IgnoreSelectColumnsOption, RawQueryOption},
 			},
 			"mssql",
 			true,
