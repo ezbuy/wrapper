@@ -1,0 +1,6 @@
+github.com/DATA-DOG/go-sqlmock v1.3.0 h1:ljjRxlddjfChBJdFKJs5LuCwCWPLaC1UZLwAo3PBBMk=
+github.com/DATA-DOG/go-sqlmock v1.3.0/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
+github.com/opentracing/opentracing-go v1.0.2 h1:3jA2P6O1F9UOrWVpwrIo17pu01KWvNWg4X946/Y5Zwg=
+github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
+golang.org/x/net v0.0.0-20190119204137-ed066c81e75e h1:MDa3fSUp6MdYHouVmCCNz/zaH2a6CRcxY3VhT/K3C5Q=
+golang.org/x/net v0.0.0-20190119204137-ed066c81e75e/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
