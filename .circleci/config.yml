@@ -6,7 +6,7 @@ jobs:
   build:
     branches:
       only:
-        - feature/add-trace
+        - master
     docker:
       # specify the version
       - image: circleci/golang:1.11
