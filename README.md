@@ -1,6 +1,6 @@
 Wrapper
 
-[![CircleCI](https://circleci.com/gh/ezbuy/wrapper/tree/feature%2Fadd-trace.svg?style=svg)](https://circleci.com/gh/ezbuy/wrapper/tree/feature%2Fadd-trace)
+[![CircleCI](https://circleci.com/gh/ezbuy/wrapper/tree/master.svg?style=svg)](https://circleci.com/gh/ezbuy/wrapper/tree/master)
 [![codecov](https://codecov.io/gh/ezbuy/wrapper/branch/feature%2Fadd-trace/graph/badge.svg)](https://codecov.io/gh/ezbuy/wrapper)
 [![godoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat)](https://godoc.org/github.com/ezbuy/wrapper)
 ---
