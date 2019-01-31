@@ -157,6 +157,7 @@ func rawQueryBuilder(query string, args ...interface{}) string {
 }
 
 func ignoreSelectColumnQueryBuilder(query string, args ...interface{}) string {
+	query = strings.Replace(query, "\n", "", -1)
 	query = strings.Replace(query, "select", "SELECT", -1)
 	query = strings.Replace(query, "from", "FROM", -1)
 	r := regexp.MustCompile("SELECT (.*) FROM")
