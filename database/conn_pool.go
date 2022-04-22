@@ -43,12 +43,18 @@ type StatsDPoolMonitor struct {
 	prefix string
 }
 
+func NewStatsDPoolMonitor(appName string) *StatsDPoolMonitor {
+	return &StatsDPoolMonitor{
+		prefix: appName,
+	}
+}
+
 func (c *StatsDPoolMonitor) Pool(op PoolOperation) error {
 	switch op {
 	case PoolCreate:
-		statsd.Incr(c.prefix + ".pool")
+		statsd.Incr(c.prefix + ".db.pool")
 	case PoolClear:
-		statsd.IncrByVal(c.prefix+".pool", -1)
+		statsd.IncrByVal(c.prefix+".db.pool", -1)
 	}
 	return nil
 }
@@ -56,13 +62,13 @@ func (c *StatsDPoolMonitor) Pool(op PoolOperation) error {
 func (c *StatsDPoolMonitor) Conn(op ConnOperation) error {
 	switch op {
 	case ConnCreate:
-		statsd.Incr(c.prefix + ".conn")
+		statsd.Incr(c.prefix + ".db.conn")
 	case ConnClose:
-		statsd.IncrByVal(c.prefix+".conn", -1)
+		statsd.IncrByVal(c.prefix+".db.conn", -1)
 	case Connoccupy:
-		statsd.Incr(c.prefix + ".conn.occupy")
+		statsd.Incr(c.prefix + ".db.conn.occupy")
 	case ConnRelease:
-		statsd.IncrByVal(c.prefix+".conn.occupy", -1)
+		statsd.IncrByVal(c.prefix+".db.conn.occupy", -1)
 	}
 	return nil
 }
@@ -79,36 +85,40 @@ const (
 	subsystemScope = "m_database_pool"
 )
 
-var (
-	poolCreate = prometheus.NewGauge(prometheus.GaugeOpts{
+func newMonitorPool(prefix string) prometheus.Gauge {
+	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      "pool_create",
-		Help:      "pool create",
+		Name:      prefix + ".db.pool",
+		Help:      "pool ",
 	})
+}
 
-	poolClear = prometheus.NewGauge(prometheus.GaugeOpts{
+func newMonitorConn(prefix string) prometheus.Gauge {
+	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      "mongo_pool_clear",
-		Help:      "pool clear",
+		Name:      prefix + ".db.conn",
+		Help:      "conn",
 	})
-	conn = prometheus.NewGauge(prometheus.GaugeOpts{
+}
+
+func newMonitorConnOccupy(prefix string) prometheus.Gauge {
+	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      "mongo_conn",
-		Help:      "conn create",
-	})
-	connOccupy = prometheus.NewGauge(prometheus.GaugeOpts{
-		Subsystem: subsystemScope,
-		Name:      "mongo_conn_occupy",
+		Name:      prefix + ".db.conn.occupy",
 		Help:      "conn occupy",
 	})
-)
+}
 
-func NewPrometheusPoolMonitor(gatewayAddress string) *PrometheusPoolMonitor {
+func NewPrometheusPoolMonitor(appName string, gatewayAddress string) *PrometheusPoolMonitor {
 	reg := prometheus.NewRegistry()
-	reg.MustRegister(poolCreate, poolClear, conn, connOccupy)
+	reg.MustRegister(
+		newMonitorPool(appName),
+		newMonitorConn(appName),
+		newMonitorConnOccupy(appName),
+	)
 
 	return &PrometheusPoolMonitor{
-		prefix: "database.mongo",
+		prefix: appName + ".db",
 		p:      push.New(gatewayAddress, "database.mongo"),
 		reg:    reg,
 	}
@@ -128,9 +138,9 @@ func (c *PrometheusPoolMonitor) push() error {
 func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
 	switch op {
 	case PoolCreate:
-		poolCreate.Inc()
+		newMonitorPool(c.prefix).Inc()
 	case PoolClear:
-		poolClear.Dec()
+		newMonitorPool(c.prefix).Dec()
 	}
 	return c.push()
 }
@@ -138,13 +148,13 @@ func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
 func (c *PrometheusPoolMonitor) Conn(op ConnOperation) error {
 	switch op {
 	case ConnCreate:
-		conn.Inc()
+		newMonitorConn(c.prefix).Inc()
 	case ConnClose:
-		conn.Dec()
+		newMonitorConn(c.prefix).Dec()
 	case Connoccupy:
-		connOccupy.Inc()
+		newMonitorConnOccupy(c.prefix).Inc()
 	case ConnRelease:
-		connOccupy.Dec()
+		newMonitorConnOccupy(c.prefix).Dec()
 	}
 	return c.push()
 }
