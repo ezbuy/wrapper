@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          go: [1.18]
+    container:
+      image: golang:${{ matrix.go }}-stretch
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: go test ./database -race -coverprofile=coverage.out -covermode=atomic
+      - uses: codecov/codecov-action@v2
+
