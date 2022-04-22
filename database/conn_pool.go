@@ -6,6 +6,9 @@ import (
 	"sync/atomic"
 
 	"github.com/ezbuy/statsd"
+	"github.com/ezbuy/wrapper/pkg/net"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 )
 
 type MonitorType uint8
@@ -62,6 +65,88 @@ func (c *StatsDPoolMonitor) Conn(op ConnOperation) error {
 		statsd.IncrByVal(c.prefix+".conn.occupy", -1)
 	}
 	return nil
+}
+
+// PrometheusMonitor is the prometheus based monitor
+// but must be used with prometheus pushgateway
+type PrometheusPoolMonitor struct {
+	prefix string
+	p      *push.Pusher
+	reg    *prometheus.Registry
+}
+
+const (
+	subsystemScope = "m_database_pool"
+)
+
+var (
+	poolCreate = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystemScope,
+		Name:      "pool_create",
+		Help:      "pool create",
+	})
+
+	poolClear = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystemScope,
+		Name:      "mongo_pool_clear",
+		Help:      "pool clear",
+	})
+	conn = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystemScope,
+		Name:      "mongo_conn",
+		Help:      "conn create",
+	})
+	connOccupy = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystemScope,
+		Name:      "mongo_conn_occupy",
+		Help:      "conn occupy",
+	})
+)
+
+func NewPrometheusPoolMonitor(gatewayAddress string) *PrometheusPoolMonitor {
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(poolCreate, poolClear, conn, connOccupy)
+
+	return &PrometheusPoolMonitor{
+		prefix: "database.mongo",
+		p:      push.New(gatewayAddress, "database.mongo"),
+		reg:    reg,
+	}
+}
+
+func (c *PrometheusPoolMonitor) push() error {
+	if err := c.p.Gatherer(c.reg).Grouping(
+		"kind", "mongo",
+	).Grouping(
+		"instance", net.GetOutboundIP(),
+	).Push(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
+	switch op {
+	case PoolCreate:
+		poolCreate.Inc()
+	case PoolClear:
+		poolClear.Dec()
+	}
+	return c.push()
+}
+
+func (c *PrometheusPoolMonitor) Conn(op ConnOperation) error {
+	switch op {
+	case ConnCreate:
+		conn.Inc()
+	case ConnClose:
+		conn.Dec()
+	case Connoccupy:
+		connOccupy.Inc()
+	case ConnRelease:
+		connOccupy.Dec()
+	}
+	return c.push()
 }
 
 type DefaultPoolMonitor struct {

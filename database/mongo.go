@@ -14,6 +14,10 @@ func NewMongoPoolMonitor(t MonitorType) Monitor {
 		return &StatsDPoolMonitor{
 			prefix: "database.mongo",
 		}
+	case Prometheus:
+		return &PrometheusPoolMonitor{
+			prefix: "database.mongo",
+		}
 	default:
 		return &DefaultPoolMonitor{}
 	}

@@ -156,7 +156,7 @@ func rawQueryBuilder(query string, args ...interface{}) string {
 	return fmt.Sprintf(q, args...)
 }
 
-func ignoreSelectColumnQueryBuilder(query string, args ...interface{}) string {
+func ignoreSelectColumnQueryBuilder(query string, _ ...interface{}) string {
 	query = strings.Replace(query, "select", "SELECT", -1)
 	query = strings.Replace(query, "from", "FROM", -1)
 	r := regexp.MustCompile("(?s)SELECT (.*) FROM")
