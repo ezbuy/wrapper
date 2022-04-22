@@ -19,7 +19,7 @@ func NewMongoPoolMonitor(t MonitorType) Monitor {
 	}
 }
 
-func NewMongoDriverMonotor(m Monitor) *event.PoolMonitor {
+func NewMongoDriverMonitor(m Monitor) *event.PoolMonitor {
 	return &event.PoolMonitor{
 		Event: func(evt *event.PoolEvent) {
 			switch evt.Type {
