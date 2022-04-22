@@ -51,7 +51,7 @@ func (t *tracer) do(ctx context.Context) {
 	tags.DBStatement.Set(span, t.statement)
 	tags.DBType.Set(span, t.dbtype)
 	tags.DBUser.Set(span, t.user)
-	ctx = opentracing.ContextWithSpan(ctx, span)
+	opentracing.ContextWithSpan(ctx, span)
 	t.span = span
 }
 
