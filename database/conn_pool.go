@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+	"io"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -9,6 +11,10 @@ import (
 	"github.com/ezbuy/wrapper/pkg/net"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+)
+
+const (
+	DEBUG_ENV = "DEBUG_MONITOR"
 )
 
 type MonitorType uint8
@@ -34,7 +40,12 @@ const (
 	PoolClear
 )
 
+type Logger interface {
+	Log(io.Writer, any)
+}
+
 type Monitor interface {
+	Logger
 	Pool(PoolOperation) error
 	Conn(ConnOperation) error
 }
@@ -47,6 +58,10 @@ func NewStatsDPoolMonitor(appName string) *StatsDPoolMonitor {
 	return &StatsDPoolMonitor{
 		prefix: appName,
 	}
+}
+
+func (m *StatsDPoolMonitor) Log(w io.Writer, args any) {
+	fmt.Fprintf(w, "statsd pool monitor: %v", args)
 }
 
 func (c *StatsDPoolMonitor) Pool(op PoolOperation) error {
@@ -79,6 +94,7 @@ type PrometheusPoolMonitor struct {
 	prefix string
 	p      *push.Pusher
 	reg    *prometheus.Registry
+	sync.Mutex
 }
 
 const (
@@ -124,6 +140,10 @@ func NewPrometheusPoolMonitor(appName string, gatewayAddress string) *Prometheus
 	}
 }
 
+func (m *PrometheusPoolMonitor) Log(w io.Writer, args any) {
+	fmt.Fprintf(w, "prometheus pool monitor: %v", args)
+}
+
 func (c *PrometheusPoolMonitor) push() error {
 	if err := c.p.Gatherer(c.reg).Grouping(
 		"kind", "mongo",
@@ -142,6 +162,8 @@ func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
 	case PoolClear:
 		newMonitorPool(c.prefix).Dec()
 	}
+	c.Lock()
+	defer c.Unlock()
 	return c.push()
 }
 
@@ -156,6 +178,8 @@ func (c *PrometheusPoolMonitor) Conn(op ConnOperation) error {
 	case ConnRelease:
 		newMonitorConnOccupy(c.prefix).Dec()
 	}
+	c.Lock()
+	defer c.Unlock()
 	return c.push()
 }
 
@@ -165,6 +189,8 @@ type DefaultPoolMonitor struct {
 	occupyNum int64
 	sync.Mutex
 }
+
+func (c *DefaultPoolMonitor) Log(w io.Writer, a any) {}
 
 func (c *DefaultPoolMonitor) Pool(op PoolOperation) error {
 	var s int64

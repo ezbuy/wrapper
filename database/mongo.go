@@ -1,6 +1,9 @@
 package database
 
 import (
+	"fmt"
+	"os"
+
 	"go.mongodb.org/mongo-driver/event"
 )
 
@@ -26,19 +29,34 @@ func NewMongoPoolMonitor(t MonitorType) Monitor {
 func NewMongoDriverMonitor(m Monitor) *event.PoolMonitor {
 	return &event.PoolMonitor{
 		Event: func(evt *event.PoolEvent) {
+			if os.Getenv(DEBUG_ENV) != "" {
+				m.Log(os.Stdout, fmt.Sprintf("event: %v", evt))
+			}
 			switch evt.Type {
 			case event.PoolCreated:
-				m.Pool(PoolCreate)
+				if err := m.Pool(PoolCreate); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("pool: %s", err))
+				}
 			case event.PoolCleared:
-				m.Pool(PoolClear)
+				if err := m.Pool(PoolClear); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("pool: %s", err))
+				}
 			case event.ConnectionCreated:
-				m.Conn(ConnCreate)
+				if err := m.Conn(ConnCreate); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("conn: %s", err))
+				}
 			case event.ConnectionClosed:
-				m.Conn(ConnClose)
+				if err := m.Conn(ConnClose); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("conn: %s", err))
+				}
 			case event.ConnectionReturned:
-				m.Conn(ConnRelease)
+				if err := m.Conn(ConnRelease); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("conn: %s", err))
+				}
 			case event.GetSucceeded:
-				m.Conn(Connoccupy)
+				if err := m.Conn(Connoccupy); err != nil && os.Getenv(DEBUG_ENV) != "" {
+					m.Log(os.Stderr, fmt.Sprintf("conn: %s", err))
+				}
 			}
 		},
 	}
