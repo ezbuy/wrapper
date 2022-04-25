@@ -82,13 +82,13 @@ type PrometheusPoolMonitor struct {
 }
 
 const (
-	subsystemScope = "m_database_pool"
+	subsystemScope = "m-mongo"
 )
 
 func newMonitorPool(prefix string) prometheus.Gauge {
 	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      prefix + ".db.pool",
+		Name:      prefix + "-pool",
 		Help:      "pool ",
 	})
 }
@@ -96,7 +96,7 @@ func newMonitorPool(prefix string) prometheus.Gauge {
 func newMonitorConn(prefix string) prometheus.Gauge {
 	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      prefix + ".db.conn",
+		Name:      prefix + "-conn",
 		Help:      "conn",
 	})
 }
@@ -104,7 +104,7 @@ func newMonitorConn(prefix string) prometheus.Gauge {
 func newMonitorConnOccupy(prefix string) prometheus.Gauge {
 	return prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystemScope,
-		Name:      prefix + ".db.conn.occupy",
+		Name:      prefix + "-conn-occupy",
 		Help:      "conn occupy",
 	})
 }
@@ -118,8 +118,8 @@ func NewPrometheusPoolMonitor(appName string, gatewayAddress string) *Prometheus
 	)
 
 	return &PrometheusPoolMonitor{
-		prefix: appName + ".db",
-		p:      push.New(gatewayAddress, "database.mongo"),
+		prefix: appName + "_db",
+		p:      push.New(gatewayAddress, "mongo-pool-monitor"),
 		reg:    reg,
 	}
 }
