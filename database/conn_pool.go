@@ -91,14 +91,22 @@ func (c *StatsDPoolMonitor) Conn(op ConnOperation) error {
 // PrometheusMonitor is the prometheus based monitor
 // but must be used with prometheus pushgateway
 type PrometheusPoolMonitor struct {
-	prefix string
-	p      *push.Pusher
-	reg    *prometheus.Registry
+	prefix     string
+	p          *push.Pusher
+	collectors map[monitorKind]prometheus.Collector
 	sync.Mutex
 }
 
 const (
 	subsystemScope = "monitor_mongo"
+)
+
+type monitorKind uint8
+
+const (
+	monitorKindPool monitorKind = iota + 1
+	monitorKindConn
+	monitorKindConnOccupy
 )
 
 func newMonitorPool(prefix string) prometheus.Gauge {
@@ -127,16 +135,19 @@ func newMonitorConnOccupy(prefix string) prometheus.Gauge {
 
 func NewPrometheusPoolMonitor(appName string, gatewayAddress string) *PrometheusPoolMonitor {
 	reg := prometheus.NewRegistry()
+	pool, conn, connOccupy := newMonitorPool(appName), newMonitorConn(appName), newMonitorConnOccupy(appName)
 	reg.MustRegister(
-		newMonitorPool(appName),
-		newMonitorConn(appName),
-		newMonitorConnOccupy(appName),
+		pool, conn, connOccupy,
 	)
 
 	return &PrometheusPoolMonitor{
 		prefix: appName,
-		p:      push.New(gatewayAddress, "mongo-pool-monitor"),
-		reg:    reg,
+		p:      push.New(gatewayAddress, "mongo-pool-monitor").Gatherer(reg),
+		collectors: map[monitorKind]prometheus.Collector{
+			monitorKindPool:       pool,
+			monitorKindConn:       conn,
+			monitorKindConnOccupy: connOccupy,
+		},
 	}
 }
 
@@ -144,8 +155,8 @@ func (m *PrometheusPoolMonitor) Log(w io.Writer, args any) {
 	fmt.Fprintf(w, "prometheus pool monitor: %v", args)
 }
 
-func (c *PrometheusPoolMonitor) push() error {
-	if err := c.p.Gatherer(c.reg).Grouping(
+func (c *PrometheusPoolMonitor) push(cl prometheus.Collector) error {
+	if err := c.p.Grouping(
 		"kind", "mongo",
 	).Grouping(
 		"instance", net.GetOutboundIP(),
@@ -158,29 +169,33 @@ func (c *PrometheusPoolMonitor) push() error {
 func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
 	switch op {
 	case PoolCreate:
-		newMonitorPool(c.prefix).Inc()
+		c.collectors[monitorKindPool].(prometheus.Gauge).Inc()
 	case PoolClear:
-		newMonitorPool(c.prefix).Dec()
+		c.collectors[monitorKindPool].(prometheus.Gauge).Dec()
 	}
 	c.Lock()
 	defer c.Unlock()
-	return c.push()
+	return c.push(c.collectors[monitorKindPool])
 }
 
 func (c *PrometheusPoolMonitor) Conn(op ConnOperation) error {
-	switch op {
-	case ConnCreate:
-		newMonitorConn(c.prefix).Inc()
-	case ConnClose:
-		newMonitorConn(c.prefix).Dec()
-	case Connoccupy:
-		newMonitorConnOccupy(c.prefix).Inc()
-	case ConnRelease:
-		newMonitorConnOccupy(c.prefix).Dec()
-	}
 	c.Lock()
 	defer c.Unlock()
-	return c.push()
+	switch op {
+	case ConnCreate:
+		c.collectors[monitorKindConn].(prometheus.Gauge).Inc()
+		return c.push(c.collectors[monitorKindConn])
+	case ConnClose:
+		c.collectors[monitorKindConn].(prometheus.Gauge).Dec()
+		return c.push(c.collectors[monitorKindConn])
+	case Connoccupy:
+		c.collectors[monitorKindConnOccupy].(prometheus.Gauge).Inc()
+		return c.push(c.collectors[monitorKindConnOccupy])
+	case ConnRelease:
+		c.collectors[monitorKindConnOccupy].(prometheus.Gauge).Dec()
+		return c.push(c.collectors[monitorKindConnOccupy])
+	}
+	return nil
 }
 
 type DefaultPoolMonitor struct {
