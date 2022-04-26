@@ -155,7 +155,7 @@ func (m *PrometheusPoolMonitor) Log(w io.Writer, args any) {
 	fmt.Fprintf(w, "prometheus pool monitor: %v", args)
 }
 
-func (c *PrometheusPoolMonitor) push(cl prometheus.Collector) error {
+func (c *PrometheusPoolMonitor) push() error {
 	if err := c.p.Grouping(
 		"kind", "mongo",
 	).Grouping(
@@ -175,27 +175,23 @@ func (c *PrometheusPoolMonitor) Pool(op PoolOperation) error {
 	}
 	c.Lock()
 	defer c.Unlock()
-	return c.push(c.collectors[monitorKindPool])
+	return c.push()
 }
 
 func (c *PrometheusPoolMonitor) Conn(op ConnOperation) error {
-	c.Lock()
-	defer c.Unlock()
 	switch op {
 	case ConnCreate:
 		c.collectors[monitorKindConn].(prometheus.Gauge).Inc()
-		return c.push(c.collectors[monitorKindConn])
 	case ConnClose:
 		c.collectors[monitorKindConn].(prometheus.Gauge).Dec()
-		return c.push(c.collectors[monitorKindConn])
 	case Connoccupy:
 		c.collectors[monitorKindConnOccupy].(prometheus.Gauge).Inc()
-		return c.push(c.collectors[monitorKindConnOccupy])
 	case ConnRelease:
 		c.collectors[monitorKindConnOccupy].(prometheus.Gauge).Dec()
-		return c.push(c.collectors[monitorKindConnOccupy])
 	}
-	return nil
+	c.Lock()
+	defer c.Unlock()
+	return c.push()
 }
 
 type DefaultPoolMonitor struct {
