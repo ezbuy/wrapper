@@ -41,7 +41,7 @@ const (
 )
 
 type Logger interface {
-	Log(io.Writer, any)
+	Log(io.Writer, interface{})
 }
 
 type Monitor interface {
@@ -60,7 +60,7 @@ func NewStatsDPoolMonitor(appName string) *StatsDPoolMonitor {
 	}
 }
 
-func (m *StatsDPoolMonitor) Log(w io.Writer, args any) {
+func (m *StatsDPoolMonitor) Log(w io.Writer, args interface{}) {
 	fmt.Fprintf(w, "statsd pool monitor: %v", args)
 }
 
@@ -151,7 +151,7 @@ func NewPrometheusPoolMonitor(appName string, gatewayAddress string) *Prometheus
 	}
 }
 
-func (m *PrometheusPoolMonitor) Log(w io.Writer, args any) {
+func (m *PrometheusPoolMonitor) Log(w io.Writer, args interface{}) {
 	fmt.Fprintf(w, "prometheus pool monitor: %v", args)
 }
 
@@ -201,7 +201,7 @@ type DefaultPoolMonitor struct {
 	sync.Mutex
 }
 
-func (c *DefaultPoolMonitor) Log(w io.Writer, a any) {}
+func (c *DefaultPoolMonitor) Log(w io.Writer, a interface{}) {}
 
 func (c *DefaultPoolMonitor) Pool(op PoolOperation) error {
 	var s int64
